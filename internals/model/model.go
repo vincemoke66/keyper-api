@@ -16,10 +16,10 @@ type Building struct {
 
 type Room struct {
 	gorm.Model
-	ID    uuid.UUID `gorm:"type:uuid"`
-	Name  string    `json:"name"`
-	Floor int       `json:"floor"`
-	Building
+	ID       uuid.UUID `gorm:"type:uuid"`
+	Name     string    `json:"name"`
+	Floor    int       `json:"floor"`
+	Building Building  `gorm:"foreignKey:BuildingId;references:ID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"`
 }
 
 type Key struct {
@@ -27,7 +27,7 @@ type Key struct {
 	ID     uuid.UUID `gorm:"type:uuid"`
 	RFID   string    `json:"rfid"`
 	Status string    `json:"status"`
-	Room
+	Room   Room      `gorm:"foreignKey:RoomID;references:ID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"`
 }
 
 type Student struct {
@@ -53,6 +53,7 @@ type Record struct {
 	ID        uuid.UUID `gorm:"type:uuid"`
 	Type      string    `json:"type"`
 	CreatedAt time.Time
-	Key
-	Student
+	Key       Key     `gorm:"foreignKey:KeyID;references:ID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"`
+	Room      Room    `gorm:"foreignKey:RoomID;references:ID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"`
+	Student   Student `gorm:"foreignKey:StudentID;references:ID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"`
 }
