@@ -18,10 +18,10 @@ func GetInstructors(c *fiber.Ctx) error {
 	db := database.DB
 	var instructor []model.Instructor
 
-	// find all students in the database
+	// find all instructors in the database
 	db.Find(&instructor)
 
-	// If no student is present return an error
+	// If no instructor is present return an error
 	if len(instructor) == 0 {
 		return c.Status(404).JSON(fiber.Map{"status": "error", "message": "No Instructors data found", "data": nil})
 	}
