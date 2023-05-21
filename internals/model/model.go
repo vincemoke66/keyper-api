@@ -33,7 +33,7 @@ type Key struct {
 type Student struct {
 	gorm.Model
 	ID        uuid.UUID `gorm:"type:uuid"`
-	FirstName string    `json:"fist_name"`
+	FirstName string    `json:"first_name"`
 	LastName  string    `json:"last_name"`
 	SchoolID  string    `json:"school_id"`
 	College   string    `json:"college"`
