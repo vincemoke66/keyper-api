@@ -9,7 +9,7 @@ import (
 
 // GetStudents func gets all existing students
 // @Description Get all existing students
-// @Tags Students
+// @Tags Student
 // @Accept json
 // @Produce json
 // @Success 200 {array} model.Student
@@ -23,7 +23,7 @@ func GetStudents(c *fiber.Ctx) error {
 
 	// If no student is present return an error
 	if len(students) == 0 {
-		return c.Status(404).JSON(fiber.Map{"status": "error", "message": "No student present", "data": nil})
+		return c.Status(404).JSON(fiber.Map{"status": "error", "message": "No Students data found", "data": nil})
 	}
 
 	// Else return students
@@ -32,10 +32,9 @@ func GetStudents(c *fiber.Ctx) error {
 
 // CreateStudent func create a student
 // @Description Create a Student
-// @Tags Students
+// @Tags Student
 // @Accept json
 // @Produce json
-// @Param title body string true "Name"
 // @Param first_name body string true "first_name"
 // @Param last_name body string true "last_name"
 // @Param school_id body string true "school_id"
@@ -47,13 +46,29 @@ func CreateStudent(c *fiber.Ctx) error {
 	db := database.DB
 	student := new(model.Student)
 
-	// Parse the body to the student object and return error if encountered
+	// Parse the body to the student object
 	err := c.BodyParser(student)
+	// Return parse error if any
 	if err != nil {
-		return c.Status(500).JSON(fiber.Map{"status": "error", "message": "Review your input", "data": err})
+		return c.Status(400).JSON(fiber.Map{"status": "error", "message": "Review your input", "data": err})
+	}
+	// Return invalid school_id if empty or null
+	if student.SchoolID == uuid.Nil.String() || student.SchoolID == "" {
+		return c.Status(400).JSON(fiber.Map{"status": "error", "message": "Invalid School ID", "data": err})
 	}
 
-	// Add a uuid to the note
+	// Create a temporary student data
+	var prevStudent model.Student
+
+	// Find the student with the given school_id
+	db.Find(&prevStudent, "school_id = ?", student.SchoolID)
+
+	// If student school id exists, return an error
+	if prevStudent.ID != uuid.Nil {
+		return c.Status(409).JSON(fiber.Map{"status": "error", "message": "Student with the same school id already exist.", "data": nil})
+	}
+
+	// Add a uuid to the new student
 	student.ID = uuid.New()
 
 	// Create the Student and return error if encountered
@@ -66,8 +81,8 @@ func CreateStudent(c *fiber.Ctx) error {
 	return c.JSON(fiber.Map{"status": "success", "message": "Student created", "data": student})
 }
 
-// GetStudent func one student by SchoolID
-// @Description Get one note by SchoolID
+// GetStudent func get one student by school_id
+// @Description Get one student by school_id
 // @Tags Student
 // @Accept json
 // @Produce json
@@ -80,20 +95,20 @@ func GetStudent(c *fiber.Ctx) error {
 	// Read the param school_id
 	school_id := c.Params("school_id")
 
-	// Find the note with the given school_id
+	// Find the student with the given school_id
 	db.Find(&student, "school_id = ?", school_id)
 
-	// If no such student present return an error
+	// If no such student present, return an error
 	if student.ID == uuid.Nil {
-		return c.Status(404).JSON(fiber.Map{"status": "error", "message": "No student present", "data": nil})
+		return c.Status(404).JSON(fiber.Map{"status": "error", "message": "Student not found", "data": nil})
 	}
 
-	// Return the note with the Id
+	// Return the student with the specified school_id
 	return c.JSON(fiber.Map{"status": "success", "message": "Student Found", "data": student})
 }
 
-// UpdateStudent update a student by SchoolID
-// @Description Update a Student by SchoolID
+// UpdateStudent update a student by school_id
+// @Description Update a Student by school_id
 // @Tags Student
 // @Accept json
 // @Produce json
@@ -104,6 +119,7 @@ func GetStudent(c *fiber.Ctx) error {
 // @Success 200 {object} model.Student
 // @router /api/student/{school_id} [put]
 func UpdateStudent(c *fiber.Ctx) error {
+	// Create a struct for updating only writable values
 	type updateStudent struct {
 		FirstName string `json:"first_name"`
 		LastName  string `json:"last_name"`
@@ -117,19 +133,21 @@ func UpdateStudent(c *fiber.Ctx) error {
 	// Read the param school_id
 	school_id := c.Params("school_id")
 
-	// Find the student with the given school_id
+	// Find the student with the given school_id param
 	db.Find(&student, "school_id = ?", school_id)
 
-	// If no such student present return an error
+	// If no such student, return an error
 	if student.ID == uuid.Nil {
-		return c.Status(404).JSON(fiber.Map{"status": "error", "message": "No student present", "data": nil})
+		return c.Status(404).JSON(fiber.Map{"status": "error", "message": "Student not found", "data": nil})
 	}
 
-	// Store the body containing the updated data and return error if encountered
+	// Store the body containing the updated data
 	var updateStudentData updateStudent
 	err := c.BodyParser(&updateStudentData)
+
+	// Return parsing error if encountered
 	if err != nil {
-		return c.Status(500).JSON(fiber.Map{"status": "error", "message": "Review your input", "data": err})
+		return c.Status(409).JSON(fiber.Map{"status": "error", "message": "Review your input", "data": err})
 	}
 
 	// Edit the student
@@ -141,13 +159,13 @@ func UpdateStudent(c *fiber.Ctx) error {
 	// Save the Changes
 	db.Save(&student)
 
-	// Return the updated note
+	// Return the updated student
 	return c.JSON(fiber.Map{"status": "success", "message": "Student Updated", "data": student})
 }
 
-// DeleteStudent delete a student by SchoolID
-// @Description Delete a Student by SchoolID
-// @Tags student
+// DeleteStudent delete a student by school_id
+// @Description Delete a Student by school_id
+// @Tags Student
 // @Accept json
 // @Produce json
 // @Success 200
@@ -159,19 +177,20 @@ func DeleteStudent(c *fiber.Ctx) error {
 	// Read the param school_id
 	school_id := c.Params("school_id")
 
-	// Find the student with the given Id
+	// Find the student with the given school_id param
 	db.Find(&student, "school_id = ?", school_id)
 
 	// If no such student present return an error
 	if student.ID == uuid.Nil {
-		return c.Status(404).JSON(fiber.Map{"status": "error", "message": "No student present", "data": nil})
+		return c.Status(404).JSON(fiber.Map{"status": "error", "message": "Student not found", "data": nil})
 	}
 
-	// Delete the student and return error if encountered
+	// Delete the student
 	err := db.Delete(&student, "school_id = ?", school_id).Error
 
+	// Return error if encountered
 	if err != nil {
-		return c.Status(404).JSON(fiber.Map{"status": "error", "message": "Failed to delete student", "data": nil})
+		return c.Status(500).JSON(fiber.Map{"status": "error", "message": "Failed to delete student", "data": nil})
 	}
 
 	// Return success message
