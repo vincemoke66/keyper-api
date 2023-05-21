@@ -10,50 +10,49 @@ import (
 type Building struct {
 	gorm.Model
 	ID    uuid.UUID `gorm:"type:uuid"`
-	Name  string
-	Abbrv string
+	Name  string    `json:"name"`
+	Abbrv string    `json:"abbrv"`
 }
 
 type Room struct {
 	gorm.Model
-	ID   uuid.UUID `gorm:"type:uuid"`
-	Name string
+	ID    uuid.UUID `gorm:"type:uuid"`
+	Name  string    `json:"name"`
+	Floor int       `json:"floor"`
 	Building
-	Floor int
 }
 
 type Key struct {
 	gorm.Model
 	ID     uuid.UUID `gorm:"type:uuid"`
-	RFID   string
-	Status string
+	RFID   string    `json:"rfid"`
+	Status string    `json:"status"`
 	Room
 }
 
 type Student struct {
 	gorm.Model
 	ID        uuid.UUID `gorm:"type:uuid"`
-	FirstName string
-	LastName  string
-	SchoolID  string
-	College   string
-	Course    string
+	FirstName string    `json:"fist_name"`
+	LastName  string    `json:"last_name"`
+	SchoolID  string    `json:"school_id"`
+	College   string    `json:"college"`
+	Course    string    `json:"course"`
 }
 
 type Instructor struct {
 	gorm.Model
 	ID        uuid.UUID `gorm:"type:uuid"`
-	FirstName string
-	LastName  string
-	SchoolID  string
+	FirstName string    `json:"first_name"`
+	LastName  string    `json:"last_name"`
+	SchoolID  string    `json:"school_id"`
 }
 
 type Record struct {
 	gorm.Model
-	ID uuid.UUID `gorm:"type:uuid"`
-	Key
+	ID        uuid.UUID `gorm:"type:uuid"`
+	Type      string    `json:"type"`
 	CreatedAt time.Time
-	Type      string
+	Key
 	Student
-	Instructor
 }
