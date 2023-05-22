@@ -44,3 +44,13 @@
   - [x] / [POST] creates a new key
   - [x] /:rfid [PUT] updates a key
   - [x] /:rfid [DELETE] deletes a key
+
+- [x] /api/record
+  - [x] / [GET] get all records
+  - [x] / [POST] creates a new record
+    - [x] should also update the key status
+
+## ENDPOINTS POTENTIAL PROBLEMS/BUGS
+
+- [ ] implement a limit or range of records
+- [ ] fix /api/room/:name [GET] endpoint
