@@ -1,8 +1,6 @@
 package model
 
 import (
-	"time"
-
 	"github.com/google/uuid"
 	"gorm.io/gorm"
 )
@@ -12,7 +10,6 @@ type Building struct {
 	ID    uuid.UUID `gorm:"type:uuid"`
 	Name  string    `json:"name"`
 	Abbrv string    `json:"abbrv"`
-	Rooms []Room    `gorm:"foreignKey:BuildingID"`
 }
 
 type Room struct {
@@ -20,16 +17,26 @@ type Room struct {
 	ID         uuid.UUID `gorm:"type:uuid"`
 	Name       string    `json:"name"`
 	Floor      int       `json:"floor"`
-	BuildingID uuid.UUID `gorm:"not null" json:"building_id"`
+	BuildingID uuid.UUID `gorm:"foreignkey:BuildingID"`
 }
 
 type Key struct {
 	gorm.Model
-	ID     uuid.UUID `gorm:"type:uuid"`
-	RFID   string    `json:"rfid"`
-	Status string    `json:"status"`
-	Room   Room      `gorm:"foreignKey:RoomID;references:ID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"`
+	ID         uuid.UUID `gorm:"type:uuid"`
+	RFID       string    `json:"rfid" gorm:"column:rfid"`
+	Status     KeyStatus `json:"status"`
+	BuildingID uuid.UUID `gorm:"foreignkey:BuildingID"`
+	RoomID     uuid.UUID `gorm:"foreignkey:RoomID"`
 }
+
+type KeyStatus string
+
+const (
+	KeyStatusAvailable   KeyStatus = "available"
+	KeyStatusBorrowed    KeyStatus = "borrowed"
+	KeyStatusLost        KeyStatus = "lost"
+	KeyStatusUnavailable KeyStatus = "unavailable"
+)
 
 type Student struct {
 	gorm.Model
@@ -51,10 +58,16 @@ type Instructor struct {
 
 type Record struct {
 	gorm.Model
-	ID        uuid.UUID `gorm:"type:uuid"`
-	Type      string    `json:"type"`
-	CreatedAt time.Time
-	Key       Key     `gorm:"foreignKey:KeyID;references:ID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"`
-	Room      Room    `gorm:"foreignKey:RoomID;references:ID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"`
-	Student   Student `gorm:"foreignKey:StudentID;references:ID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"`
+	ID        uuid.UUID  `gorm:"type:uuid"`
+	Type      RecordType `json:"type"`
+	StudentID uuid.UUID  `gorm:"foreignkey:StudentID"`
+	KeyID     uuid.UUID  `gorm:"foreignkey:KeyID"`
+	RoomID    uuid.UUID  `gorm:"foreignkey:RoomID"`
 }
+
+type RecordType string
+
+const (
+	RecordTypeBorrow RecordType = "borrow"
+	RecordTypeReturn RecordType = "return"
+)

@@ -10,8 +10,10 @@ func SetupStudentRoutes(router fiber.Router) {
 
 	// Create a room
 	room.Post("/", roomHandler.CreateRoom)
-	// Read all room
+	// Read all rooms
 	room.Get("/", roomHandler.GetRooms)
+	// Read all rooms on a building
+	room.Get("/:building_name", roomHandler.GetRoomsOnBuilding)
 	// Read a room
 	room.Get("/:name", roomHandler.GetRoom)
 	// Update room

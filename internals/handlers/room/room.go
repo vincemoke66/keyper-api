@@ -1,6 +1,8 @@
 package roomHandler
 
 import (
+	"strings"
+
 	"github.com/gofiber/fiber/v2"
 	"github.com/google/uuid"
 	"github.com/vincemoke66/keyper-api/database"
@@ -20,6 +22,41 @@ func GetRooms(c *fiber.Ctx) error {
 
 	// find all rooms in the database
 	db.Find(&rooms)
+
+	// If no room is present return an error
+	if len(rooms) == 0 {
+		return c.Status(404).JSON(fiber.Map{"status": "error", "message": "No Rooms data found", "data": nil})
+	}
+
+	// Else return rooms
+	return c.JSON(fiber.Map{"status": "success", "message": "Rooms Found", "data": rooms})
+}
+
+// GetRoomsOnBuilding func gets all existing rooms on a specified building name
+// @Description Get all existing rooms on a specified building name
+// @Tags Room
+// @Accept json
+// @Produce json
+// @Success 200 {array} model.Room
+// @router /api/room [get]
+func GetRoomsOnBuilding(c *fiber.Ctx) error {
+	db := database.DB
+	var rooms []model.Room
+
+	// Get building_name param
+	building_name := c.Params("building_name")
+
+	// Create a temporary building data
+	var storedBuilding model.Building
+	// Find the building with the given building name
+	db.Find(&storedBuilding, "name = ?", building_name)
+	// If building does not exist, return an error
+	if storedBuilding.ID == uuid.Nil {
+		return c.Status(409).JSON(fiber.Map{"status": "error", "message": "Building does not exist.", "data": nil})
+	}
+
+	// find all rooms on the specified building in the database
+	db.Find(&rooms, "building_id = ?", storedBuilding.ID)
 
 	// If no room is present return an error
 	if len(rooms) == 0 {
@@ -63,6 +100,11 @@ func CreateRoom(c *fiber.Ctx) error {
 		return c.Status(400).JSON(fiber.Map{"status": "error", "message": "Invalid Name", "data": err})
 	}
 
+	// Returns an error if the room name has space
+	if strings.Contains(room_to_add.Name, " ") {
+		return c.Status(400).JSON(fiber.Map{"status": "error", "message": "Review your input"})
+	}
+
 	// Create a temporary building data
 	var storedBuilding model.Building
 	// Find the building with the given building name
@@ -96,10 +138,6 @@ func CreateRoom(c *fiber.Ctx) error {
 	if err != nil {
 		return c.Status(500).JSON(fiber.Map{"status": "error", "message": "Could not create room", "data": err})
 	}
-
-	// Append the room to the Building's Rooms
-	storedBuilding.Rooms = append(storedBuilding.Rooms, *room)
-	db.Save(storedBuilding)
 
 	// Return the created room
 	return c.JSON(fiber.Map{"status": "success", "message": "Room created", "data": room})

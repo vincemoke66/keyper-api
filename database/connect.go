@@ -43,5 +43,7 @@ func ConnectDB() {
 	DB.AutoMigrate(&model.Student{})
 	DB.AutoMigrate(&model.Instructor{})
 	DB.AutoMigrate(&model.Building{}, &model.Room{})
+	DB.AutoMigrate(&model.Key{})
+	DB.AutoMigrate(&model.Record{})
 	fmt.Println("Database Migrated")
 }
