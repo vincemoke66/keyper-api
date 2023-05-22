@@ -37,37 +37,58 @@ func GetRooms(c *fiber.Ctx) error {
 // @Produce json
 // @Param name body string true "name"
 // @Param floor body int true "floor"
-// @Param building body Building true "building"
+// @Param building_name body string true "building_name"
 // @Success 200 {object} model.Room
 // @router /api/room [post]
 func CreateRoom(c *fiber.Ctx) error {
+	// access the database
 	db := database.DB
-	room := new(model.Room)
 
-	// Parse the body to the room object
-	err := c.BodyParser(room)
+	// create room to add struct
+	type RoomToAdd struct {
+		Name         string `json:"name"`
+		Floor        int    `json:"floor"`
+		BuildingName string `json:"building_name"`
+	}
+	room_to_add := new(RoomToAdd)
+
+	// Parse the body to the RoomToAdd object
+	err := c.BodyParser(room_to_add)
 	// Return parse error if any
 	if err != nil {
 		return c.Status(400).JSON(fiber.Map{"status": "error", "message": "Review your input", "data": err})
 	}
 	// Return invalid school_id if empty or null
-	if room.Name == uuid.Nil.String() || room.Name == "" {
+	if room_to_add.Name == uuid.Nil.String() || room_to_add.Name == "" {
 		return c.Status(400).JSON(fiber.Map{"status": "error", "message": "Invalid Name", "data": err})
+	}
+
+	// Create a temporary building data
+	var storedBuilding model.Building
+	// Find the building with the given building name
+	db.Find(&storedBuilding, "name = ?", room_to_add.BuildingName)
+	// If room exists with given name, return an error
+	if storedBuilding.ID == uuid.Nil {
+		return c.Status(409).JSON(fiber.Map{"status": "error", "message": "Building does not exist.", "data": nil})
 	}
 
 	// Create a temporary room data
 	var storedRoom model.Room
-
 	// Find the room with the given name
-	db.Find(&storedRoom, "name = ?", room.Name)
-
+	db.Find(&storedRoom, "name = ?", room_to_add.Name)
 	// If room exists with given name, return an error
 	if storedRoom.ID != uuid.Nil {
 		return c.Status(409).JSON(fiber.Map{"status": "error", "message": "Room with the same name already exist.", "data": nil})
 	}
 
+	// If no further errors found, create a room object
+	room := new(model.Room)
 	// Add a uuid to the new room
 	room.ID = uuid.New()
+	// Add the validated room_to_add data
+	room.Name = room_to_add.Name
+	room.Floor = room_to_add.Floor
+	room.BuildingID = storedBuilding.ID
 
 	// Create the Room
 	err = db.Create(&room).Error
@@ -75,6 +96,10 @@ func CreateRoom(c *fiber.Ctx) error {
 	if err != nil {
 		return c.Status(500).JSON(fiber.Map{"status": "error", "message": "Could not create room", "data": err})
 	}
+
+	// Append the room to the Building's Rooms
+	storedBuilding.Rooms = append(storedBuilding.Rooms, *room)
+	db.Save(storedBuilding)
 
 	// Return the created room
 	return c.JSON(fiber.Map{"status": "success", "message": "Room created", "data": room})
@@ -150,7 +175,6 @@ func UpdateRoom(c *fiber.Ctx) error {
 	// Edit the room
 	room.Name = updateRoomData.Name
 	room.Floor = updateRoomData.Floor
-	room.Building = updateRoomData.Building
 
 	// Save the Changes
 	db.Save(&room)
