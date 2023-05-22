@@ -54,3 +54,5 @@
 
 - [ ] implement a limit or range of records
 - [ ] fix /api/room/:name [GET] endpoint
+
+- [ ] create unit tests for all handlers 
