@@ -12,14 +12,15 @@ type Building struct {
 	ID    uuid.UUID `gorm:"type:uuid"`
 	Name  string    `json:"name"`
 	Abbrv string    `json:"abbrv"`
+	Rooms []Room    `gorm:"foreignKey:BuildingID"`
 }
 
 type Room struct {
 	gorm.Model
-	ID       uuid.UUID `gorm:"type:uuid"`
-	Name     string    `json:"name"`
-	Floor    int       `json:"floor"`
-	Building Building  `gorm:"foreignKey:BuildingId;references:ID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"`
+	ID         uuid.UUID `gorm:"type:uuid"`
+	Name       string    `json:"name"`
+	Floor      int       `json:"floor"`
+	BuildingID uuid.UUID `gorm:"not null" json:"building_id"`
 }
 
 type Key struct {
