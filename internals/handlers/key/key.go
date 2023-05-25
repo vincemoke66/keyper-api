@@ -42,6 +42,31 @@ func GetKeysUsingBuildingName(c *fiber.Ctx) error {
 	return c.JSON(fiber.Map{"status": "success", "message": "Keys Found", "data": keys})
 }
 
+// GetKeysUsingBuildingName func gets all keys based on the given rfid
+// @Description Gets all keys based on the given rfid
+// @Tags Key
+// @Accept json
+// @Produce json
+// @Success 200 {array} model.Key
+// @router /api/key/{rfid} [get]
+func GetKeyUsingRFID(c *fiber.Ctx) error {
+	db := database.DB
+	var key model.Key
+
+	// Read the param key_rfid
+	key_rfid := c.Params("rfid")
+
+	// find all keys on the given rfid in the database
+	db.Find(&key, "rfid = ?", key_rfid)
+	// If key does not exist, return an error
+	if key.ID == uuid.Nil {
+		return c.Status(409).JSON(fiber.Map{"status": "error", "message": "Key does not exist.", "data": nil})
+	}
+
+	// Else return keys
+	return c.JSON(fiber.Map{"status": "success", "message": "Key Found", "data": key})
+}
+
 // CreateKey func creates a key
 // @Description Creates a Key
 // @Tags Key
@@ -117,6 +142,8 @@ func CreateKey(c *fiber.Ctx) error {
 	key.Status = key_to_add.Status
 	key.BuildingID = storedBuidling.ID
 	key.RoomID = storedRoom.ID
+	key.BuildingName = storedBuidling.Name
+	key.RoomName = storedRoom.Name
 
 	// Create the Key and return error if encountered
 	err = db.Create(&key).Error

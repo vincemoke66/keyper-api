@@ -22,11 +22,13 @@ type Room struct {
 
 type Key struct {
 	gorm.Model
-	ID         uuid.UUID `gorm:"type:uuid"`
-	RFID       string    `json:"rfid" gorm:"column:rfid"`
-	Status     KeyStatus `json:"status"`
-	BuildingID uuid.UUID `gorm:"foreignkey:BuildingID"`
-	RoomID     uuid.UUID `gorm:"foreignkey:RoomID"`
+	ID           uuid.UUID `gorm:"type:uuid"`
+	RFID         string    `json:"rfid" gorm:"column:rfid"`
+	Status       KeyStatus `json:"status"`
+	BuildingID   uuid.UUID `gorm:"foreignkey:BuildingID"`
+	RoomID       uuid.UUID `gorm:"foreignkey:RoomID"`
+	RoomName     string
+	BuildingName string
 }
 
 type KeyStatus string
@@ -44,6 +46,7 @@ type Student struct {
 	FirstName string    `json:"first_name"`
 	LastName  string    `json:"last_name"`
 	SchoolID  string    `json:"school_id"`
+	RFID      string    `json:"rfid" gorm:"column:rfid"`
 	College   string    `json:"college"`
 	Course    string    `json:"course"`
 }
@@ -58,11 +61,12 @@ type Instructor struct {
 
 type Record struct {
 	gorm.Model
-	ID        uuid.UUID  `gorm:"type:uuid"`
-	Type      RecordType `json:"type"`
-	StudentID uuid.UUID  `gorm:"foreignkey:StudentID"`
-	KeyID     uuid.UUID  `gorm:"foreignkey:KeyID"`
-	RoomID    uuid.UUID  `gorm:"foreignkey:RoomID"`
+	ID           uuid.UUID  `gorm:"type:uuid"`
+	Type         RecordType `json:"type"`
+	StudentID    uuid.UUID  `gorm:"foreignkey:StudentID"`
+	KeyID        uuid.UUID  `gorm:"foreignkey:KeyID"`
+	RoomName     string
+	BuildingName string
 }
 
 type RecordType string

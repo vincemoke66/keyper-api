@@ -36,8 +36,8 @@ func GetAllRecords(c *fiber.Ctx) error {
 // @Accept json
 // @Produce json
 // @Param type body string true "type"
-// @Param student_school_id body string true "student_school_id"
-// @Param room_name body string true "room_name"
+// @Param school_id body string true "school_id"
+// @Param key_rfid body string true "key_rfid"
 // @Success 200 {object} model.Record
 // @router /api/record [post]
 func CreateRecord(c *fiber.Ctx) error {
@@ -48,7 +48,6 @@ func CreateRecord(c *fiber.Ctx) error {
 		Type     model.RecordType `json:"type"`
 		SchoolID string           `json:"school_id"`
 		RFID     string           `json:"rfid"`
-		RoomName string           `json:"room_name"`
 	}
 
 	record_to_add := new(RecordToAdd)
@@ -57,32 +56,15 @@ func CreateRecord(c *fiber.Ctx) error {
 	err := c.BodyParser(record_to_add)
 	// Return parse error if any
 	if err != nil {
-		return c.Status(400).JSON(fiber.Map{"status": "error", "message": "Review your input", "data": err})
+		return c.Status(400).JSON(fiber.Map{"status": "error", "message": "Error parsing data", "data": err})
 	}
-	// Return invalid school_id if empty or null
-	if record_to_add.SchoolID == uuid.Nil.String() || record_to_add.SchoolID == "" {
-		return c.Status(400).JSON(fiber.Map{"status": "error", "message": "Invalid School ID", "data": err})
-	}
-	// Return invalid room_name if empty or null
-	if record_to_add.RoomName == uuid.Nil.String() || record_to_add.RoomName == "" {
-		return c.Status(400).JSON(fiber.Map{"status": "error", "message": "Invalid Room Name", "data": err})
+
+	if record_to_add.Type != "return" && record_to_add.SchoolID == "" {
+		return c.Status(400).JSON(fiber.Map{"status": "error", "message": "Review your input", "data": nil})
 	}
 
 	// Create a temporary room data
 	var storedStudent model.Student
-	db.Find(&storedStudent, "school_id = ?", record_to_add.SchoolID)
-	// If room name does not exists, return an error
-	if storedStudent.ID == uuid.Nil {
-		return c.Status(409).JSON(fiber.Map{"status": "error", "message": "Student does not exist.", "data": nil})
-	}
-
-	// Create a temporary room data
-	var storedRoom model.Room
-	db.Find(&storedRoom, "name = ?", record_to_add.RoomName)
-	// If room name does not exists, return an error
-	if storedRoom.ID == uuid.Nil {
-		return c.Status(409).JSON(fiber.Map{"status": "error", "message": "Room does not exist.", "data": nil})
-	}
 
 	// Create a temporary key data
 	var storedKey model.Key
@@ -93,13 +75,69 @@ func CreateRecord(c *fiber.Ctx) error {
 		return c.Status(409).JSON(fiber.Map{"status": "error", "message": "Key does not exist.", "data": nil})
 	}
 
+	var latestRecord model.Record
+
+	var records []model.Record
+	db.Find(&records)
+	if len(records) != 0 {
+		db.Order("created_at DESC").Where("key_id = ?", storedKey.ID).First(&latestRecord)
+	}
+
+	if record_to_add.Type == "borrow" && latestRecord.Type == "borrow" {
+		return c.Status(400).JSON(fiber.Map{"status": "error", "message": "Key already borrowed", "data": nil})
+	}
+
+	if record_to_add.Type == "borrow" && storedKey.Status == "borrowed" {
+		return c.Status(400).JSON(fiber.Map{"status": "error", "message": "Key already borrowed", "data": nil})
+	}
+
+	if record_to_add.Type == "return" && storedKey.Status == "available" {
+		return c.Status(400).JSON(fiber.Map{"status": "error", "message": "Key already returned", "data": nil})
+	}
+
+	if record_to_add.Type == "return" && latestRecord.Type == "return" {
+		return c.Status(400).JSON(fiber.Map{"status": "error", "message": "Key already returned", "data": nil})
+	}
+
+	if record_to_add.Type == "return" && record_to_add.SchoolID == "" {
+		if latestRecord.ID == uuid.Nil {
+			return c.Status(400).JSON(fiber.Map{"status": "error", "message": "Review your input", "data": nil})
+		}
+		if latestRecord.Type == "return" {
+			return c.Status(400).JSON(fiber.Map{"status": "error", "message": "Key already returned", "data": nil})
+		}
+
+		db.Find(&storedStudent, "id = ?", latestRecord.StudentID)
+	} else {
+		db.Find(&storedStudent, "school_id = ?", record_to_add.SchoolID)
+	}
+
+	// If student does not exist, return an error
+	if storedStudent.ID == uuid.Nil {
+		return c.Status(409).JSON(fiber.Map{"status": "error", "message": "Student does not exist.", "data": nil})
+	}
+
+	var storedRoom model.Room
+	db.Find(&storedRoom, "id = ?", storedKey.RoomID)
+	// If room does not exist, return an error
+	if storedRoom.ID == uuid.Nil {
+		return c.Status(409).JSON(fiber.Map{"status": "error", "message": "Room does not exist.", "data": nil})
+	}
+
+	var storedBuilding model.Building
+	db.Find(&storedBuilding, "id = ?", storedKey.BuildingID)
+	// If building does not exist, return an error
+	if storedBuilding.ID == uuid.Nil {
+		return c.Status(409).JSON(fiber.Map{"status": "error", "message": "Building does not exist.", "data": nil})
+	}
 	// Add a uuid to the new key
 	record.ID = uuid.New()
 
 	record.Type = record_to_add.Type
 	record.StudentID = storedStudent.ID
 	record.KeyID = storedKey.ID
-	record.RoomID = storedRoom.ID
+	record.RoomName = storedRoom.Name
+	record.BuildingName = storedBuilding.Name
 
 	// Update key status
 	if record.Type == "return" {

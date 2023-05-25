@@ -12,7 +12,9 @@ func SetupStudentRoutes(router fiber.Router) {
 	student.Post("/", studentHandler.CreateStudent)
 	// Read all students
 	student.Get("/", studentHandler.GetStudents)
-	// Read a student
+	// Read a student through rfid
+	student.Get("/:rfid", studentHandler.GetStudentThroughRFID)
+	// Read a student through school id
 	student.Get("/:school_id", studentHandler.GetStudent)
 	// Update student
 	student.Put("/:school_id", studentHandler.UpdateStudent)

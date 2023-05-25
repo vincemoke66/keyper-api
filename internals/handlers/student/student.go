@@ -39,6 +39,7 @@ func GetStudents(c *fiber.Ctx) error {
 // @Param last_name body string true "last_name"
 // @Param school_id body string true "school_id"
 // @Param college body string true "college"
+// @Param rfid body string true "rfid"
 // @Param course body string true "course"
 // @Success 200 {object} model.Student
 // @router /api/student [post]
@@ -58,14 +59,18 @@ func CreateStudent(c *fiber.Ctx) error {
 	}
 
 	// Create a temporary student data
-	var prevStudent model.Student
-
+	var storedStudent model.Student
 	// Find the student with the given school_id
-	db.Find(&prevStudent, "school_id = ?", student.SchoolID)
-
+	db.Find(&storedStudent, "school_id = ?", student.SchoolID)
 	// If student school id exists, return an error
-	if prevStudent.ID != uuid.Nil {
-		return c.Status(409).JSON(fiber.Map{"status": "error", "message": "Student with the same school id already exist.", "data": nil})
+	if storedStudent.ID != uuid.Nil {
+		return c.Status(409).JSON(fiber.Map{"status": "error", "message": "Invalid Student Credentials.", "data": nil})
+	}
+	// Find the student with the given rfid
+	db.Find(&storedStudent, "rfid = ?", student.RFID)
+	// If student rfid exists, return an error
+	if storedStudent.ID != uuid.Nil {
+		return c.Status(409).JSON(fiber.Map{"status": "error", "message": "Invalid Student Credentials.", "data": nil})
 	}
 
 	// Add a uuid to the new student
@@ -104,6 +109,32 @@ func GetStudent(c *fiber.Ctx) error {
 	}
 
 	// Return the student with the specified school_id
+	return c.JSON(fiber.Map{"status": "success", "message": "Student Found", "data": student})
+}
+
+// GetStudentThroughRFID func get one student by rfid
+// @Description Get one student by rfid
+// @Tags Student
+// @Accept json
+// @Produce json
+// @Success 200 {object} model.Student
+// @router /api/student/{rfid} [get]
+func GetStudentThroughRFID(c *fiber.Ctx) error {
+	db := database.DB
+	var student model.Student
+
+	// Read the param rfid
+	rfid := c.Params("rfid")
+
+	// Find the student with the given rfid
+	db.Find(&student, "rfid = ?", rfid)
+
+	// If no such student present, return an error
+	if student.ID == uuid.Nil {
+		return c.Status(404).JSON(fiber.Map{"status": "error", "message": "Student not found with that rfid", "data": nil})
+	}
+
+	// Return the student with the specified rfid
 	return c.JSON(fiber.Map{"status": "success", "message": "Student Found", "data": student})
 }
 
