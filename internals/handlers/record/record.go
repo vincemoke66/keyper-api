@@ -19,7 +19,7 @@ func GetAllRecords(c *fiber.Ctx) error {
 	var records []model.Record
 
 	// find all records
-	db.Find(&records)
+	db.Order("created_at DESC").Find(&records)
 
 	// If no record is present return an error
 	if len(records) == 0 {
@@ -138,6 +138,7 @@ func CreateRecord(c *fiber.Ctx) error {
 	record.KeyID = storedKey.ID
 	record.RoomName = storedRoom.Name
 	record.BuildingName = storedBuilding.Name
+	record.StudentName = storedStudent.LastName + ", " + storedStudent.FirstName
 
 	// Update key status
 	if record.Type == "return" {

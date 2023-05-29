@@ -15,6 +15,5 @@ func main() {
 	// Setup the router
 	router.SetupRoutes(app)
 
-	// Listen on PORT 3000
-	app.Listen("192.168.101.77:8080")
+	app.Listen("192.168.147.250:8080")
 }

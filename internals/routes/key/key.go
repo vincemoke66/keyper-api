@@ -11,10 +11,13 @@ func SetupStudentRoutes(router fiber.Router) {
 	// Create a key
 	key.Post("/", keyHandler.CreateKey)
 
-	// Read all key in a specific building
+	// Read all keys in a specific building
+	key.Get("/", keyHandler.GetKeys)
+
+	// Read all keys in a specific building
 	key.Get("/rfid/:rfid", keyHandler.GetKeyUsingRFID)
 
-	// Read all key in a specific building
+	// Read all keys in a specific building
 	key.Get("/bn/:building_name", keyHandler.GetKeysUsingBuildingName)
 
 	// Read a key

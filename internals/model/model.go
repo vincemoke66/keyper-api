@@ -28,6 +28,7 @@ type Key struct {
 	BuildingID   uuid.UUID `gorm:"foreignkey:BuildingID"`
 	RoomID       uuid.UUID `gorm:"foreignkey:RoomID"`
 	RoomName     string
+	RoomFloor    int `json:"floor"`
 	BuildingName string
 }
 
@@ -65,6 +66,7 @@ type Record struct {
 	Type         RecordType `json:"type"`
 	StudentID    uuid.UUID  `gorm:"foreignkey:StudentID"`
 	KeyID        uuid.UUID  `gorm:"foreignkey:KeyID"`
+	StudentName  string
 	RoomName     string
 	BuildingName string
 }
