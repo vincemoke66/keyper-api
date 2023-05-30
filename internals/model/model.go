@@ -50,6 +50,7 @@ type Student struct {
 	RFID      string    `json:"rfid" gorm:"column:rfid"`
 	College   string    `json:"college"`
 	Course    string    `json:"course"`
+	Section   string    `json:"section"`
 }
 
 type Instructor struct {
@@ -77,3 +78,26 @@ const (
 	RecordTypeBorrow RecordType = "borrow"
 	RecordTypeReturn RecordType = "return"
 )
+
+type Attendance struct {
+	gorm.Model
+	ID          uuid.UUID `gorm:"type:uuid"`
+	StudentName string
+	Section     string
+	Course      string
+	RoomName    string
+	Subject     string
+	ScheduleID  uuid.UUID `gorm:"foreignkey:ScheduleID"`
+	StudentID   uuid.UUID `gorm:"foreignkey:StudentID"`
+}
+
+type Schedule struct {
+	gorm.Model
+	ID             uuid.UUID `gorm:"type:uuid"`
+	RoomName       string    `json:"room"`
+	StartTime      string    `json:"start_time"`
+	EndTime        string    `json:"end_time"`
+	DayOfWeek      string    `json:"day"`
+	Subject        string    `json:"subject"`
+	InstructorName string    `json:"instructor"`
+}
